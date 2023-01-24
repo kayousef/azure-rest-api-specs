@@ -157,6 +157,9 @@
           "Successful Healthcare Post Request": {
             "$ref": "./examples/text/SuccessfulHealthcarePostRequest.json"
           },
+          "Successful Custom Healthcare Post Request": {
+            "$ref": "./examples/text/SuccessfulCustomHealthcarePostRequest.json"
+          },
           "Successful Submit Abstractive Summarization Task": {
             "$ref": "./examples/text/SuccessfulAbstractiveSummarizationTaskSubmit.json"
           },
@@ -212,6 +215,9 @@
           },
           "Successful Get Text Analysis Health Request": {
             "$ref": "./examples/text/SuccessfulHealthcareTaskStatusRequest.json"
+          },
+          "Successful Get Text Analysis Custom Health Request": {
+            "$ref": "./examples/text/SuccessfulCustomHealthcareTaskStatusRequest.json"
           },
           "Successful Get Abstractive Summarization Result": {
             "$ref": "./examples/text/SuccessfulAbstractiveSummarizationTaskResult.json"
@@ -291,6 +297,7 @@
         "KeyPhraseExtraction",
         "EntityLinking",
         "Healthcare",
+        "CustomHealthcare",
         "ExtractiveSummarization",
         "CustomEntityRecognition",
         "CustomSingleLabelClassification",
@@ -329,6 +336,7 @@
         "KeyPhraseExtractionLROResults",
         "EntityLinkingLROResults",
         "HealthcareLROResults",
+        "CustomHealthcareLROResults",
         "ExtractiveSummarizationLROResults",
         "CustomEntityRecognitionLROResults",
         "CustomSingleLabelClassificationLROResults",
@@ -831,6 +839,20 @@
         }
       ]
     },
+    "CustomHealthcareTaskParameters": {
+      "type": "object",
+      "description": "Supported parameters for a custom Healthcare task.",
+      "properties": {
+        "stringIndexType": {
+          "$ref": "common.json#/definitions/StringIndexType"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/CustomTaskParameters"
+        }
+      ]
+    },
     "HealthcareLROTask": {
       "type": "object",
       "properties": {
@@ -844,6 +866,20 @@
         }
       ],
       "x-ms-discriminator-value": "Healthcare"
+    },
+    "CustomHealthcareLROTask": {
+      "type": "object",
+      "properties": {
+        "parameters": {
+          "$ref": "#/definitions/CustomHealthcareTaskParameters"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/AnalyzeTextLROTask"
+        }
+      ],
+      "x-ms-discriminator-value": "CustomHealthcare"
     },
     "HealthcareResult": {
       "type": "object",
@@ -864,11 +900,41 @@
         "documents"
       ]
     },
+    "CustomHealthcareResult": {
+      "type": "object",
+      "properties": {
+        "documents": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomHealthcareEntitiesDocumentResultWithDocumentDetectedLanguage"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/CustomResult"
+        }
+      ],
+      "required": [
+        "documents"
+      ]
+    },
     "HealthcareEntitiesDocumentResultWithDocumentDetectedLanguage": {
       "type": "object",
       "allOf": [
         {
           "$ref": "#/definitions/HealthcareEntitiesDocumentResult"
+        },
+        {
+          "$ref": "#/definitions/DocumentDetectedLanguageString"
+        }
+      ]
+    },
+    "CustomHealthcareEntitiesDocumentResultWithDocumentDetectedLanguage": {
+      "type": "object",
+      "allOf": [
+        {
+          "$ref": "#/definitions/CustomHealthcareEntitiesDocumentResult"
         },
         {
           "$ref": "#/definitions/DocumentDetectedLanguageString"
@@ -896,6 +962,34 @@
           "type": "object",
           "description": "JSON bundle containing a FHIR compatible object for consumption in other Healthcare tools. For additional information see https://www.hl7.org/fhir/overview.html.",
           "additionalProperties": {}
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/DocumentResult"
+        }
+      ],
+      "required": [
+        "entities",
+        "relations"
+      ]
+    },
+    "CustomHealthcareEntitiesDocumentResult": {
+      "type": "object",
+      "properties": {
+        "entities": {
+          "description": "Healthcare entities.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/CustomHealthcareEntity"
+          }
+        },
+        "relations": {
+          "type": "array",
+          "description": "Healthcare entity relations.",
+          "items": {
+            "$ref": "#/definitions/HealthcareRelation"
+          }
         }
       },
       "allOf": [
@@ -992,6 +1086,23 @@
         "offset",
         "length",
         "confidenceScore"
+      ]
+    },
+    "CustomHealthcareEntity": {
+      "type": "object",
+      "properties": {
+        "entityComponentInformation": {
+          "description": "(Optional) Entity component information listing fired components of the extracted entity. This object only applies for custom healthcare.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/EntityComponentInformation"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/HealthcareEntity"
+        }
       ]
     },
     "HealthcareRelation": {
@@ -1122,6 +1233,77 @@
         "id": {
           "description": "Entity id in the given source catalog.",
           "type": "string"
+        }
+      }
+    },
+    "EntityComponentInformation": {
+      "description": "This object contains information of the detected entity components. The possible component types may expand in the future. Parsing code should handle unexpected values gracefully",
+      "type": "object",
+      "discriminator": "entityComponentKind",
+      "properties": {
+        "entityComponentKind": {
+          "description": "The component object kind.",
+          "type": "string",
+          "enum": [
+            "PrebuiltComponent",
+            "LearnedComponent",
+            "ListComponent"
+          ],
+          "x-ms-enum": {
+            "name": "entityComponentKind",
+            "modelAsString": true
+          }
+        }
+      },
+      "required": [
+        "entityComponentKind"
+      ]
+    },
+    "PrebuiltComponent": {
+      "description": "This object contains information of the prebuilt component of the detected entity.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/EntityComponentInformation"
+        }
+      ],
+      "type": "object",
+      "x-ms-discriminator-value": "PrebuiltComponent",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The prebuilt component of an extracted entity type."
+        }
+      }
+    },
+    "LearnedComponent": {
+      "description": "This object contains information of the learned component of the detected entity.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/EntityComponentInformation"
+        }
+      ],
+      "type": "object",
+      "x-ms-discriminator-value": "LearnedComponent",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The learned component of an extracted entity type."
+        }
+      }
+    },
+    "ListComponent": {
+      "description": "This object contains information of the list component of the detected entity.",
+      "allOf": [
+        {
+          "$ref": "#/definitions/EntityComponentInformation"
+        }
+      ],
+      "type": "object",
+      "x-ms-discriminator-value": "ListComponent",
+      "properties": {
+        "value": {
+          "type": "string",
+          "description": "The list key of an extracted entity type."
         }
       }
     },
@@ -3394,6 +3576,23 @@
         "results"
       ],
       "x-ms-discriminator-value": "HealthcareLROResults"
+    },
+    "CustomHealthcareLROResult": {
+      "type": "object",
+      "properties": {
+        "results": {
+          "$ref": "#/definitions/CustomHealthcareResult"
+        }
+      },
+      "allOf": [
+        {
+          "$ref": "#/definitions/AnalyzeTextLROResult"
+        }
+      ],
+      "required": [
+        "results"
+      ],
+      "x-ms-discriminator-value": "CustomHealthcareLROResults"
     },
     "SentimentLROResult": {
       "type": "object",
