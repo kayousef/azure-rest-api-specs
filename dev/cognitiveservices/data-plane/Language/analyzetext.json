@@ -926,7 +926,7 @@
           "$ref": "#/definitions/HealthcareEntitiesDocumentResult"
         },
         {
-          "$ref": "#/definitions/DocumentDetectedLanguageString"
+          "$ref": "#/definitions/DocumentDetectedLanguage"
         }
       ]
     },
@@ -1197,6 +1197,19 @@
           ],
           "x-ms-enum": {
             "name": "Association",
+            "modelAsString": false
+          }
+        },
+        "temporality": {
+          "description": "Describes temporal information regarding the entity.",
+          "type": "string",
+          "enum": [
+            "current",
+            "past",
+            "future"
+          ],
+          "x-ms-enum": {
+            "name": "Temporality",
             "modelAsString": false
           }
         }
@@ -3661,15 +3674,6 @@
       "properties": {
         "detectedLanguage": {
           "$ref": "#/definitions/DetectedLanguage",
-          "description": "If 'language' is set to 'auto' for the document in the request this field will contain a 2 letter ISO 639-1 representation of the language detected for this document."
-        }
-      }
-    },
-    "DocumentDetectedLanguageString": {
-      "type": "object",
-      "properties": {
-        "detectedLanguage": {
-          "type": "string",
           "description": "If 'language' is set to 'auto' for the document in the request this field will contain a 2 letter ISO 639-1 representation of the language detected for this document."
         }
       }
